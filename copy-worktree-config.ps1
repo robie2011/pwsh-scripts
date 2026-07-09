@@ -1,47 +1,47 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Kopiert Config-Dateien vom Haupt-Worktree in den aktuellen Worktree.
+    Copies config files from the main worktree into the current worktree.
 
 .DESCRIPTION
-    Sucht im Quell-Worktree nach bekannten Config-Dateien und kopiert diese unter
-    Beibehaltung der relativen Ordnerstruktur in den aktuellen Worktree.
+    Searches the source worktree for known config files and copies them into the
+    current worktree, preserving the relative directory structure.
 
-    Standardmässig werden folgende Patterns berücksichtigt:
+    The following patterns are matched by default:
       - **/Properties/launchSettings.json
       - **/appsettings.json
       - **/appsettings.*.json
       - **/.env
       - **/.env.*
 
-    Existiert eine Zieldatei bereits, wird per Nachfrage entschieden (ausser bei -Force).
+    If a target file already exists, the user is prompted (unless -Force is set).
 
 .PARAMETER Force
-    Existierende Dateien ohne Nachfrage überschreiben.
+    Overwrite existing files without prompting.
 
 .PARAMETER Include
-    Zusätzliche Glob-Patterns, ergänzend zu den hardcodierten Defaults.
-    Beispiel: -Include '**/custom.json', '**/*.config'
+    Additional glob patterns on top of the built-in defaults.
+    Example: -Include '**/custom.json', '**/*.config'
 
 .PARAMETER SourcePath
-    Optionaler Pfad zum Quell-Worktree. Wird dieser Parameter weggelassen, ermittelt
-    das Script den Haupt-Worktree automatisch via 'git worktree list'.
+    Optional path to the source worktree. When omitted, the main worktree is
+    detected automatically via 'git worktree list'.
 
 .EXAMPLE
     .\copy-worktree-config.ps1
-    Kopiert Config-Dateien vom Haupt-Worktree (Nachfrage bei bestehenden Dateien).
+    Copies config files from the main worktree (prompts before overwriting).
 
 .EXAMPLE
     .\copy-worktree-config.ps1 -WhatIf
-    Zeigt, welche Dateien kopiert würden, ohne etwas zu ändern.
+    Shows which files would be copied without making any changes.
 
 .EXAMPLE
     .\copy-worktree-config.ps1 -Force
-    Überschreibt alle bestehenden Dateien ohne Nachfrage.
+    Overwrites all existing files without prompting.
 
 .EXAMPLE
     .\copy-worktree-config.ps1 -Include '**/custom.json', '**/*.config'
-    Kopiert zusätzlich Dateien, die den angegebenen Patterns entsprechen.
+    Also copies files matching the given patterns.
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -51,7 +51,7 @@ param(
 
     [string]$SourcePath,
 
-    # Interner Parameter für Tests: überschreibt den via Git ermittelten Zielpfad.
+    # Internal parameter for tests: overrides the Git-detected target path.
     [string]$TargetPath
 )
 
@@ -68,11 +68,11 @@ $script:DefaultPatterns = @(
 function Get-MainWorktreePath {
     $output = & git worktree list --porcelain 2>&1
     if ($LASTEXITCODE -ne 0) {
-        throw "git worktree list fehlgeschlagen: $output"
+        throw "git worktree list failed: $output"
     }
     $firstLine = $output | Where-Object { $_ -match '^worktree ' } | Select-Object -First 1
     if (-not $firstLine) {
-        throw "Kein Worktree-Eintrag in der Ausgabe von 'git worktree list' gefunden."
+        throw "No worktree entry found in output of 'git worktree list'."
     }
     return ($firstLine -replace '^worktree ', '').Trim()
 }
@@ -80,7 +80,7 @@ function Get-MainWorktreePath {
 function Get-CurrentWorktreeRoot {
     $result = & git rev-parse --show-toplevel 2>&1
     if ($LASTEXITCODE -ne 0) {
-        throw "Nicht in einem Git-Repository: $result"
+        throw "Not in a Git repository: $result"
     }
     return $result.Trim()
 }
@@ -88,10 +88,10 @@ function Get-CurrentWorktreeRoot {
 function Get-FilesMatchingGlob {
     <#
     .SYNOPSIS
-        Gibt alle Dateien unter $BasePath zurück, die dem Glob-Pattern entsprechen.
+        Returns all files under $BasePath that match the given glob pattern.
     .DESCRIPTION
-        Unterstützt Patterns der Form **/dir/filename oder **/filename.
-        Das ** steht für eine beliebig tiefe Verzeichnisstruktur.
+        Supports patterns of the form **/dir/filename or **/filename.
+        The ** matches any directory depth.
     #>
     param(
         [string]$BasePath,
@@ -133,7 +133,7 @@ function Get-FilesMatchingGlob {
 }
 
 # ---------------------------------------------------------------------------
-# Quell- und Zielpfad auflösen
+# Resolve source and target paths
 # ---------------------------------------------------------------------------
 
 if ($TargetPath) {
@@ -150,12 +150,12 @@ if ($SourcePath) {
 }
 
 if ([string]::Equals($resolvedSource, $resolvedTarget, [System.StringComparison]::OrdinalIgnoreCase)) {
-    Write-Error "Quell- und Zielpfad sind identisch ('$resolvedSource'). Das Script muss innerhalb eines verlinkten Worktrees ausgeführt werden, nicht im Hauptcheckout."
+    Write-Error "Source and target paths are identical ('$resolvedSource'). The script must be run from within a linked worktree, not the main checkout."
     exit 1
 }
 
 # ---------------------------------------------------------------------------
-# Passende Dateien suchen (Duplikate ausschliessen)
+# Collect matching files (skip duplicates)
 # ---------------------------------------------------------------------------
 
 $allPatterns = $script:DefaultPatterns + $Include
@@ -171,12 +171,12 @@ foreach ($pattern in $allPatterns) {
 }
 
 if ($sourceFiles.Count -eq 0) {
-    Write-Host "Keine passenden Config-Dateien in '$resolvedSource' gefunden."
+    Write-Host "No matching config files found in '$resolvedSource'."
     exit 0
 }
 
 # ---------------------------------------------------------------------------
-# Dateien kopieren
+# Copy files
 # ---------------------------------------------------------------------------
 
 $overwriteAll = $false
@@ -185,7 +185,7 @@ foreach ($srcFile in $sourceFiles) {
     $relativePath = $srcFile.FullName.Substring($resolvedSource.Length).TrimStart('\')
     $destPath     = Join-Path $resolvedTarget $relativePath
 
-    if (-not $PSCmdlet.ShouldProcess($relativePath, 'Kopieren')) {
+    if (-not $PSCmdlet.ShouldProcess($relativePath, 'Copy')) {
         continue
     }
 
@@ -193,17 +193,17 @@ foreach ($srcFile in $sourceFiles) {
 
     if ($destExists -and -not $Force -and -not $overwriteAll) {
         $choices = @(
-            [System.Management.Automation.Host.ChoiceDescription]::new('&Ja',        'Diese Datei überschreiben')
-            [System.Management.Automation.Host.ChoiceDescription]::new('&Alle',      'Alle bestehenden Dateien überschreiben')
-            [System.Management.Automation.Host.ChoiceDescription]::new('&Nein',      'Diese Datei überspringen')
-            [System.Management.Automation.Host.ChoiceDescription]::new('&Abbrechen', 'Script beenden')
+            [System.Management.Automation.Host.ChoiceDescription]::new('&Yes',    'Overwrite this file')
+            [System.Management.Automation.Host.ChoiceDescription]::new('&All',    'Overwrite all existing files')
+            [System.Management.Automation.Host.ChoiceDescription]::new('&No',     'Skip this file')
+            [System.Management.Automation.Host.ChoiceDescription]::new('&Cancel', 'Stop the script')
         )
-        $choice = $Host.UI.PromptForChoice('Datei existiert bereits', $relativePath, $choices, 2)
+        $choice = $Host.UI.PromptForChoice('File already exists', $relativePath, $choices, 2)
         switch ($choice) {
-            0 { <# Ja – weiter mit Kopieren #> }
+            0 { <# Yes – continue with copy #> }
             1 { $overwriteAll = $true }
-            2 { Write-Verbose "Übersprungen: $relativePath"; continue }
-            3 { Write-Host 'Abgebrochen.'; exit 0 }
+            2 { Write-Verbose "Skipped: $relativePath"; continue }
+            3 { Write-Host 'Cancelled.'; exit 0 }
         }
     }
 
@@ -213,5 +213,5 @@ foreach ($srcFile in $sourceFiles) {
     }
 
     Copy-Item -LiteralPath $srcFile.FullName -Destination $destPath -Force
-    Write-Host "Kopiert: $relativePath"
+    Write-Host "Copied: $relativePath"
 }

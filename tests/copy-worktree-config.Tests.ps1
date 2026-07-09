@@ -47,10 +47,10 @@ Describe 'copy-worktree-config' {
     }
 
     # ------------------------------------------------------------------
-    Context 'Get-FilesMatchingGlob (Glob-Pattern-Matching)' {
+    Context 'Get-FilesMatchingGlob (glob pattern matching)' {
     # ------------------------------------------------------------------
 
-        It 'findet appsettings.json im Stammverzeichnis' {
+        It 'finds appsettings.json in the root directory' {
             New-FileWithContent (Join-Path $script:Source 'appsettings.json')
 
             Invoke-CopyConfig -Params @{
@@ -62,7 +62,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'appsettings.json') | Should -Be $true
         }
 
-        It 'findet appsettings.Development.json' {
+        It 'finds appsettings.Development.json' {
             New-FileWithContent (Join-Path $script:Source 'appsettings.Development.json')
 
             Invoke-CopyConfig -Params @{
@@ -74,9 +74,9 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'appsettings.Development.json') | Should -Be $true
         }
 
-        It 'findet launchSettings.json nur in einem Properties-Unterordner' {
+        It 'finds launchSettings.json only within a Properties subfolder' {
             New-FileWithContent (Join-Path $script:Source 'Properties\launchSettings.json')
-            New-FileWithContent (Join-Path $script:Source 'launchSettings.json')  # soll ignoriert werden
+            New-FileWithContent (Join-Path $script:Source 'launchSettings.json')  # should be ignored
 
             Invoke-CopyConfig -Params @{
                 SourcePath = $script:Source
@@ -88,7 +88,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'launchSettings.json') | Should -Be $false
         }
 
-        It 'findet appsettings.json in einem Unterordner' {
+        It 'finds appsettings.json in a subfolder' {
             New-FileWithContent (Join-Path $script:Source 'MyApp\appsettings.json')
 
             Invoke-CopyConfig -Params @{
@@ -100,7 +100,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'MyApp\appsettings.json') | Should -Be $true
         }
 
-        It 'findet .env Dateien' {
+        It 'finds .env files' {
             New-FileWithContent (Join-Path $script:Source '.env')
 
             Invoke-CopyConfig -Params @{
@@ -112,7 +112,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target '.env') | Should -Be $true
         }
 
-        It 'findet .env.local Dateien' {
+        It 'finds .env.local files' {
             New-FileWithContent (Join-Path $script:Source '.env.local')
 
             Invoke-CopyConfig -Params @{
@@ -124,7 +124,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target '.env.local') | Should -Be $true
         }
 
-        It 'schliesst nicht passende Dateien aus' {
+        It 'excludes non-matching files' {
             New-FileWithContent (Join-Path $script:Source 'README.md')
             New-FileWithContent (Join-Path $script:Source 'Program.cs')
 
@@ -134,7 +134,7 @@ Describe 'copy-worktree-config' {
                 Force      = $true
             }
 
-            $result | Should -Match 'Keine passenden'
+            $result | Should -Match 'No matching'
         }
     }
 
@@ -142,7 +142,7 @@ Describe 'copy-worktree-config' {
     Context '-WhatIf' {
     # ------------------------------------------------------------------
 
-        It 'kopiert keine Dateien wenn -WhatIf gesetzt ist' {
+        It 'does not copy files when -WhatIf is set' {
             New-FileWithContent (Join-Path $script:Source 'appsettings.json') 'original'
 
             Invoke-CopyConfig -Params @{
@@ -159,9 +159,9 @@ Describe 'copy-worktree-config' {
     Context '-Force' {
     # ------------------------------------------------------------------
 
-        It 'überschreibt bestehende Datei ohne Nachfrage' {
-            New-FileWithContent (Join-Path $script:Source 'appsettings.json') 'neu'
-            New-FileWithContent (Join-Path $script:Target 'appsettings.json') 'alt'
+        It 'overwrites existing file without prompting' {
+            New-FileWithContent (Join-Path $script:Source 'appsettings.json') 'new'
+            New-FileWithContent (Join-Path $script:Target 'appsettings.json') 'old'
 
             Invoke-CopyConfig -Params @{
                 SourcePath = $script:Source
@@ -169,10 +169,10 @@ Describe 'copy-worktree-config' {
                 Force      = $true
             } | Out-Null
 
-            Get-Content (Join-Path $script:Target 'appsettings.json') -Raw | Should -Match 'neu'
+            Get-Content (Join-Path $script:Target 'appsettings.json') -Raw | Should -Match 'new'
         }
 
-        It 'gibt "Kopiert:" für jede kopierte Datei aus' {
+        It 'outputs "Copied:" for each copied file' {
             New-FileWithContent (Join-Path $script:Source 'appsettings.json')
 
             $output = Invoke-CopyConfig -Params @{
@@ -181,16 +181,16 @@ Describe 'copy-worktree-config' {
                 Force      = $true
             }
 
-            $output | Should -Match 'Kopiert:'
+            $output | Should -Match 'Copied:'
         }
     }
 
     # ------------------------------------------------------------------
-    Context 'Datei kopieren (neue Dateien)' {
+    Context 'Copying files (new files)' {
     # ------------------------------------------------------------------
 
-        It 'kopiert Datei in den Zielordner' {
-            New-FileWithContent (Join-Path $script:Source 'appsettings.json') 'inhalt'
+        It 'copies file to the target directory' {
+            New-FileWithContent (Join-Path $script:Source 'appsettings.json') 'content'
 
             Invoke-CopyConfig -Params @{
                 SourcePath = $script:Source
@@ -201,7 +201,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'appsettings.json') | Should -Be $true
         }
 
-        It 'erstellt fehlende Unterordner im Ziel' {
+        It 'creates missing subdirectories in the target' {
             New-FileWithContent (Join-Path $script:Source 'MyApp\Properties\launchSettings.json')
 
             Invoke-CopyConfig -Params @{
@@ -213,7 +213,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'MyApp\Properties\launchSettings.json') | Should -Be $true
         }
 
-        It 'kopiert Dateiinhalt korrekt' {
+        It 'copies file content correctly' {
             $content = '{"key":"value"}'
             New-FileWithContent (Join-Path $script:Source 'appsettings.json') $content
 
@@ -227,7 +227,7 @@ Describe 'copy-worktree-config' {
             $copied.Trim() | Should -Be $content
         }
 
-        It 'kopiert dieselbe Datei nicht doppelt (Duplikate via mehrere Patterns)' {
+        It 'does not copy the same file twice (deduplication across patterns)' {
             New-FileWithContent (Join-Path $script:Source 'appsettings.json')
 
             $output = Invoke-CopyConfig -Params @{
@@ -236,7 +236,7 @@ Describe 'copy-worktree-config' {
                 Force      = $true
             }
 
-            ($output | Where-Object { $_ -match 'Kopiert:.*appsettings\.json' }).Count | Should -Be 1
+            ($output | Where-Object { $_ -match 'Copied:.*appsettings\.json' }).Count | Should -Be 1
         }
     }
 
@@ -244,7 +244,7 @@ Describe 'copy-worktree-config' {
     Context '-Include' {
     # ------------------------------------------------------------------
 
-        It 'kopiert Dateien die zusätzlich per -Include angegeben werden' {
+        It 'copies files specified via -Include' {
             New-FileWithContent (Join-Path $script:Source 'custom.json') 'custom'
 
             Invoke-CopyConfig -Params @{
@@ -257,7 +257,7 @@ Describe 'copy-worktree-config' {
             Test-Path (Join-Path $script:Target 'custom.json') | Should -Be $true
         }
 
-        It 'kombiniert -Include mit den Defaults' {
+        It 'combines -Include with default patterns' {
             New-FileWithContent (Join-Path $script:Source 'appsettings.json')
             New-FileWithContent (Join-Path $script:Source 'extra.config')
 
@@ -268,34 +268,34 @@ Describe 'copy-worktree-config' {
                 Include    = @('**/extra.config')
             }
 
-            ($output | Where-Object { $_ -match 'Kopiert:.*appsettings\.json' }).Count | Should -Be 1
-            ($output | Where-Object { $_ -match 'Kopiert:.*extra\.config' }).Count | Should -Be 1
+            ($output | Where-Object { $_ -match 'Copied:.*appsettings\.json' }).Count | Should -Be 1
+            ($output | Where-Object { $_ -match 'Copied:.*extra\.config' }).Count | Should -Be 1
         }
     }
 
     # ------------------------------------------------------------------
-    Context 'Fehlerfall: Quelle gleich Ziel' {
+    Context 'Error: source equals target' {
     # ------------------------------------------------------------------
 
-        It 'gibt Fehlermeldung aus wenn SourcePath und TargetPath identisch sind' {
+        It 'reports an error when SourcePath and TargetPath are identical' {
             $output = Invoke-CopyConfig -Params @{
                 SourcePath = $script:Source
                 TargetPath = $script:Source
             }
-            $output | Should -Match 'identisch'
+            $output | Should -Match 'identical'
         }
     }
 
     # ------------------------------------------------------------------
-    Context 'Keine Dateien gefunden' {
+    Context 'No files found' {
     # ------------------------------------------------------------------
 
-        It 'meldet, dass keine Dateien gefunden wurden' {
+        It 'reports that no files were found' {
             $output = Invoke-CopyConfig -Params @{
                 SourcePath = $script:Source
                 TargetPath = $script:Target
             }
-            $output | Should -Match 'Keine passenden'
+            $output | Should -Match 'No matching'
         }
     }
 }
