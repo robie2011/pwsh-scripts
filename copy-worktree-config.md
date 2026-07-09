@@ -1,71 +1,71 @@
 # copy-worktree-config.ps1
 
-Kopiert environment-spezifische Config-Dateien vom Haupt-Git-Worktree in den aktuellen Worktree.
+Copies environment-specific config files from the main Git worktree into the current worktree.
 
-Da Config-Dateien (z. B. `appsettings.json`, `.env`) typischerweise in `.gitignore` stehen und daher beim Erstellen eines neuen Worktrees fehlen, lassen sie sich mit diesem Script schnell nachziehen.
+Config files (e.g. `appsettings.json`, `.env`) are typically listed in `.gitignore` and therefore missing when a new worktree is created. This script lets you pull them in with a single command.
 
-## Voraussetzungen
+## Requirements
 
-- PowerShell 5.1 oder neuer
-- Das Script muss innerhalb eines verlinkten Git-Worktrees ausgeführt werden
+- PowerShell 5.1 or later
+- Must be run from within a linked Git worktree
 
-## Verwendung
+## Usage
 
 ```powershell
 .\copy-worktree-config.ps1 [-Force] [-Include <String[]>] [-SourcePath <String>] [-WhatIf]
 ```
 
-## Parameter
+## Parameters
 
-| Parameter | Typ | Beschreibung |
+| Parameter | Type | Description |
 |---|---|---|
-| `-Force` | Switch | Bestehende Dateien im Ziel ohne Nachfrage überschreiben |
-| `-Include` | `String[]` | Zusätzliche Glob-Patterns (ergänzend zu den Defaults) |
-| `-SourcePath` | `String` | Optionaler Quellpfad. Standardmässig wird der Haupt-Worktree via `git worktree list` ermittelt |
-| `-WhatIf` | Switch | Zeigt an, was kopiert werden würde, ohne Änderungen vorzunehmen |
+| `-Force` | Switch | Overwrite existing files in the target without prompting |
+| `-Include` | `String[]` | Additional glob patterns on top of the built-in defaults |
+| `-SourcePath` | `String` | Optional source path. Defaults to the main worktree detected via `git worktree list` |
+| `-WhatIf` | Switch | Preview which files would be copied without making any changes |
 
-Ohne `-Force` fragt das Script bei jeder Datei nach, die im Ziel bereits existiert:
+Without `-Force`, the script prompts for each file that already exists in the target:
 
-| Auswahl | Bedeutung |
+| Choice | Meaning |
 |---|---|
-| **J**a | Diese Datei überschreiben |
-| **A**lle | Alle weiteren Dateien ohne Nachfrage überschreiben |
-| **N**ein | Diese Datei überspringen |
-| **A**bbrechen | Script beenden |
+| **Y**es | Overwrite this file |
+| **A**ll | Overwrite all remaining files without further prompting |
+| **N**o | Skip this file |
+| **C**ancel | Stop the script |
 
-## Standard-Patterns
+## Default Patterns
 
-Folgende Dateimuster werden standardmässig berücksichtigt:
+The following file patterns are matched by default:
 
-| Pattern | Beschreibung |
+| Pattern | Description |
 |---|---|
-| `**/Properties/launchSettings.json` | ASP.NET Startprofil |
-| `**/appsettings.json` | .NET Basis-Konfiguration |
-| `**/appsettings.*.json` | .NET umgebungsspezifische Konfiguration |
-| `**/.env` | Environment-Variablen |
-| `**/.env.*` | Umgebungsspezifische `.env`-Dateien (z. B. `.env.local`) |
+| `**/Properties/launchSettings.json` | ASP.NET launch profiles |
+| `**/appsettings.json` | .NET base configuration |
+| `**/appsettings.*.json` | .NET environment-specific configuration |
+| `**/.env` | Environment variable files |
+| `**/.env.*` | Environment-specific `.env` files (e.g. `.env.local`) |
 
-## Beispiele
+## Examples
 
 ```powershell
-# Interaktiv: fragt nach bei bestehenden Dateien
+# Interactive: prompts before overwriting existing files
 .\copy-worktree-config.ps1
 
-# Vorschau: zeigt was kopiert werden würde
+# Preview: shows what would be copied
 .\copy-worktree-config.ps1 -WhatIf
 
-# Alles ohne Nachfrage überschreiben
+# Overwrite everything without prompting
 .\copy-worktree-config.ps1 -Force
 
-# Zusätzliche Patterns mitgeben
+# Add extra patterns on top of the defaults
 .\copy-worktree-config.ps1 -Include '**/custom.json', '**/*.config'
 
-# Aus einem anderen Quellpfad kopieren
-.\copy-worktree-config.ps1 -SourcePath 'D:\repos\mein-projekt'
+# Copy from a specific source path instead of the main worktree
+.\copy-worktree-config.ps1 -SourcePath 'D:\repos\my-project'
 ```
 
-## Hinweise
+## Notes
 
-- Die Ordnerstruktur der Quelldateien wird im Ziel-Worktree beibehalten
-- Fehlende Unterordner im Ziel werden automatisch erstellt
-- Duplikate (Dateien, die auf mehrere Patterns passen) werden nur einmal kopiert
+- The directory structure of source files is preserved in the target worktree
+- Missing subdirectories in the target are created automatically
+- Files matching multiple patterns are only copied once (deduplication)
