@@ -7,12 +7,12 @@ Config files (e.g. `appsettings.json`, `.env`) are typically listed in `.gitigno
 ## Requirements
 
 - PowerShell 5.1 or later
-- Must be run from within a linked Git worktree
+- When `-SourcePath` is omitted, the script must be run from within a linked Git worktree (not the main checkout)
 
 ## Usage
 
 ```powershell
-.\copy-worktree-config.ps1 [-Force] [-Include <String[]>] [-SourcePath <String>] [-WhatIf]
+.\copy-worktree-config.ps1 [-Force] [-Include <String[]>] [-SourcePath <String>] [-WhatIf] [-Confirm]
 ```
 
 ## Parameters
@@ -23,6 +23,7 @@ Config files (e.g. `appsettings.json`, `.env`) are typically listed in `.gitigno
 | `-Include` | `String[]` | Additional glob patterns on top of the built-in defaults |
 | `-SourcePath` | `String` | Optional source path. Defaults to the main worktree detected via `git worktree list` |
 | `-WhatIf` | Switch | Preview which files would be copied without making any changes |
+| `-Confirm` | Switch | Prompt for confirmation before each copy operation |
 
 Without `-Force`, the script prompts for each file that already exists in the target:
 

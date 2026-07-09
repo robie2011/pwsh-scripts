@@ -52,6 +52,7 @@ param(
     [string]$SourcePath,
 
     # Internal parameter for tests: overrides the Git-detected target path.
+    [Parameter(DontShow = $true)]
     [string]$TargetPath
 )
 
@@ -151,7 +152,7 @@ if ($SourcePath) {
 
 if ([string]::Equals($resolvedSource, $resolvedTarget, [System.StringComparison]::OrdinalIgnoreCase)) {
     Write-Error "Source and target paths are identical ('$resolvedSource'). The script must be run from within a linked worktree, not the main checkout."
-    exit 1
+    # Write-Error with $ErrorActionPreference = 'Stop' terminates the script.
 }
 
 # ---------------------------------------------------------------------------
